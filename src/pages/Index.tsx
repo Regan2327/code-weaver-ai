@@ -1,23 +1,48 @@
 import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import NeuroDriveHeader from "@/components/NeuroDriveHeader";
 import AIOrb from "@/components/AIOrb";
+import { OrbState } from "@/components/AIOrb";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
 import WarRoom from "@/components/WarRoom";
+import DecisionCard, { FlightOption } from "@/components/DecisionCard";
 import { Message } from "@/components/ChatMessage";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [orbStatus, setOrbStatus] = useState<'idle' | 'listening' | 'thinking' | 'speaking'>('idle');
+  const [orbStatus, setOrbStatus] = useState<OrbState>('idle');
+  const [showDecisionCards, setShowDecisionCards] = useState(false);
+  const [flightOptions, setFlightOptions] = useState<FlightOption[]>([
+    {
+      id: '1',
+      airline: 'SkyNova Airlines',
+      departureTime: '08:45',
+      arrivalTime: '11:30',
+      duration: '2h 45m',
+      price: 459,
+      stops: 0,
+    },
+    {
+      id: '2',
+      airline: 'Quantum Air',
+      departureTime: '14:20',
+      arrivalTime: '18:05',
+      duration: '3h 45m',
+      price: 329,
+      stops: 1,
+    },
+  ]);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       content: 'NeuroDrive initialized. All systems nominal. How may I assist you today?',
       sender: 'ai',
-      sentiment: 'positive',
+      sentiment: 'calm',
       timestamp: new Date(),
     }
   ]);
@@ -32,28 +57,44 @@ const Index = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
-    setOrbStatus('thinking');
+    setOrbStatus('processing');
 
-    // Simulate AI response
+    // Check for flight-related keywords
+    const isFlightQuery = content.toLowerCase().includes('flight') || 
+                          content.toLowerCase().includes('book') ||
+                          content.toLowerCase().includes('travel');
+
     setTimeout(() => {
-      const aiResponses = [
-        { content: "Processing your request through neural pathways...", sentiment: 'neutral' as const },
-        { content: "Analysis complete. I've optimized the parameters for maximum efficiency.", sentiment: 'positive' as const },
-        { content: "Understood. Initiating protocol sequence now.", sentiment: 'neutral' as const },
-        { content: "Warning: This action requires elevated permissions.", sentiment: 'urgent' as const },
-      ];
+      let aiResponse: Message;
+
+      if (isFlightQuery) {
+        aiResponse = {
+          id: (Date.now() + 1).toString(),
+          content: "I found 2 optimal flight options for you. Swipe right to accept, left to reject.",
+          sender: 'ai',
+          sentiment: 'success',
+          timestamp: new Date(),
+        };
+        setShowDecisionCards(true);
+      } else {
+        const responses = [
+          { content: "Processing your request through neural pathways. Analysis indicates optimal solution found.", sentiment: 'calm' as const },
+          { content: "WARNING: Elevated security protocol required for this operation. Proceed with caution.", sentiment: 'urgent' as const },
+          { content: "Task completed successfully. All parameters within expected thresholds.", sentiment: 'success' as const },
+          { content: "Understood. Initiating protocol sequence. Estimated completion: 2.3 seconds.", sentiment: 'calm' as const },
+        ];
+        
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        aiResponse = {
+          id: (Date.now() + 1).toString(),
+          content: response.content,
+          sender: 'ai',
+          sentiment: response.sentiment,
+          timestamp: new Date(),
+        };
+      }
       
-      const response = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response.content,
-        sender: 'ai',
-        sentiment: response.sentiment,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, aiResponse]);
       setOrbStatus('speaking');
       
       setTimeout(() => setOrbStatus('idle'), 2000);
@@ -67,6 +108,45 @@ const Index = () => {
       return newState;
     });
   }, []);
+
+  const handleAcceptFlight = useCallback((id: string) => {
+    const flight = flightOptions.find(f => f.id === id);
+    setFlightOptions(prev => prev.filter(f => f.id !== id));
+    
+    toast({
+      title: "Flight Booked!",
+      description: `${flight?.airline} - $${flight?.price} confirmed.`,
+    });
+
+    const aiMessage: Message = {
+      id: Date.now().toString(),
+      content: `Excellent choice. ${flight?.airline} flight booked for $${flight?.price}. Confirmation sent to your neural link.`,
+      sender: 'ai',
+      sentiment: 'success',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, aiMessage]);
+    
+    if (flightOptions.length <= 1) {
+      setShowDecisionCards(false);
+    }
+  }, [flightOptions]);
+
+  const handleRejectFlight = useCallback((id: string) => {
+    setFlightOptions(prev => prev.filter(f => f.id !== id));
+    
+    if (flightOptions.length <= 1) {
+      setShowDecisionCards(false);
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        content: "All options rejected. Shall I search for alternative flights?",
+        sender: 'ai',
+        sentiment: 'calm',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, aiMessage]);
+    }
+  }, [flightOptions]);
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -94,6 +174,34 @@ const Index = () => {
         >
           <AIOrb status={orbStatus} />
         </motion.section>
+
+        {/* Decision Cards Overlay */}
+        <AnimatePresence>
+          {showDecisionCards && flightOptions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-30 max-w-md mx-auto"
+            >
+              <div className="text-center mb-4">
+                <span className="font-mono text-xs text-muted-foreground">
+                  SWIPE TO DECIDE
+                </span>
+              </div>
+              <div className="space-y-4">
+                {flightOptions.map(option => (
+                  <DecisionCard
+                    key={option.id}
+                    option={option}
+                    onAccept={handleAcceptFlight}
+                    onReject={handleRejectFlight}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Chat Section */}
         <section className="flex-1 flex flex-col min-h-0 max-w-md mx-auto w-full">
