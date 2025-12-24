@@ -1,26 +1,68 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Activity, Cpu, Database, Wifi, AlertTriangle } from "lucide-react";
+import { X } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface WarRoomProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const WarRoom = ({ isOpen, onClose }: WarRoomProps) => {
-  const systemLogs = [
-    { time: "14:32:01", message: "Neural pathway optimized", type: "success" },
-    { time: "14:31:58", message: "Memory sync complete", type: "info" },
-    { time: "14:31:45", message: "External API latency detected", type: "warning" },
-    { time: "14:31:30", message: "Context window: 87% capacity", type: "info" },
-    { time: "14:31:15", message: "Voice module initialized", type: "success" },
-  ];
+interface LogEntry {
+  timestamp: string;
+  module: string;
+  message: string;
+}
 
-  const metrics = [
-    { label: "CPU", value: "23%", icon: Cpu },
-    { label: "MEMORY", value: "4.2GB", icon: Database },
-    { label: "LATENCY", value: "12ms", icon: Wifi },
-    { label: "UPTIME", value: "99.9%", icon: Activity },
-  ];
+const WarRoom = ({ isOpen, onClose }: WarRoomProps) => {
+  const [logs, setLogs] = useState<LogEntry[]>([
+    { timestamp: "10:42:05", module: "INTENT_ROUTER", message: "Detected Transactional Intent" },
+    { timestamp: "10:42:04", module: "NLP_ENGINE", message: "Parsing natural language input..." },
+    { timestamp: "10:42:03", module: "CONTEXT_MGR", message: "Context window loaded (87% capacity)" },
+    { timestamp: "10:42:02", module: "VOICE_MODULE", message: "Audio stream initialized" },
+    { timestamp: "10:42:01", module: "NEURAL_NET", message: "Pathway optimization complete" },
+    { timestamp: "10:42:00", module: "MEMORY_SYNC", message: "Short-term memory synced" },
+    { timestamp: "10:41:58", module: "API_GATEWAY", message: "External service latency: 12ms" },
+    { timestamp: "10:41:55", module: "SECURITY", message: "Session token validated" },
+  ]);
+
+  const [showCursor, setShowCursor] = useState(true);
+
+  // Blinking cursor effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 530);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulate new logs coming in
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const modules = ["INTENT_ROUTER", "NLP_ENGINE", "CONTEXT_MGR", "NEURAL_NET", "API_GATEWAY", "MEMORY_SYNC"];
+    const messages = [
+      "Processing semantic analysis...",
+      "Vector embedding generated",
+      "Response confidence: 94.7%",
+      "Cache hit ratio: 89%",
+      "Latency within threshold",
+      "Token count: 2,847",
+    ];
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const timestamp = now.toLocaleTimeString('en-US', { hour12: false }).split(' ')[0];
+      const newLog: LogEntry = {
+        timestamp,
+        module: modules[Math.floor(Math.random() * modules.length)],
+        message: messages[Math.floor(Math.random() * messages.length)],
+      };
+      
+      setLogs(prev => [newLog, ...prev.slice(0, 19)]);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -32,93 +74,106 @@ const WarRoom = ({ isOpen, onClose }: WarRoomProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
           />
 
-          {/* Drawer */}
+          {/* Terminal Drawer - Slides from bottom */}
           <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md glass border-l border-border z-50 overflow-hidden"
+            initial={{ y: "100%" }}
+            animate={{ y: "20%" }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed left-0 right-0 bottom-0 h-[80%] z-50 rounded-t-3xl overflow-hidden"
+            style={{ backgroundColor: '#000000' }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
+            {/* Header Bar */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-matrix-green/20">
               <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-matrix-green animate-pulse" />
-                <h2 className="font-display font-semibold text-lg">WAR ROOM</h2>
+                {/* Terminal dots */}
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-signal-red" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <div className="w-3 h-3 rounded-full bg-matrix-green" />
+                </div>
+                <span className="font-mono text-sm text-matrix-green ml-4">
+                  WAR_ROOM.exe
+                </span>
               </div>
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                className="p-2 rounded-lg text-matrix-green/60 hover:text-matrix-green hover:bg-matrix-green/10 transition-colors"
               >
                 <X className="w-5 h-5" />
               </motion.button>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="p-4 border-b border-border">
-              <h3 className="text-xs font-mono text-muted-foreground mb-3">SYSTEM METRICS</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {metrics.map((metric, i) => (
-                  <motion.div
-                    key={metric.label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="glass rounded-xl p-3"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <metric.icon className="w-4 h-4 text-neon-blue" />
-                      <span className="text-xs font-mono text-muted-foreground">{metric.label}</span>
-                    </div>
-                    <span className="text-lg font-mono text-neon-blue text-glow-blue">{metric.value}</span>
-                  </motion.div>
-                ))}
+            {/* Terminal Content */}
+            <div className="p-6 h-full overflow-y-auto font-mono text-sm">
+              {/* System Header */}
+              <div className="mb-6 text-matrix-green/60">
+                <p>╔══════════════════════════════════════════════════════════╗</p>
+                <p>║  NEURODRIVE SYSTEM MONITOR v2.4.1                        ║</p>
+                <p>║  STATUS: ACTIVE | UPTIME: 99.97% | NODES: 847            ║</p>
+                <p>╚══════════════════════════════════════════════════════════╝</p>
               </div>
-            </div>
 
-            {/* System Logs */}
-            <div className="p-4 flex-1 overflow-y-auto">
-              <h3 className="text-xs font-mono text-muted-foreground mb-3">SYSTEM LOGS</h3>
-              <div className="space-y-2">
-                {systemLogs.map((log, i) => (
+              {/* Log entries */}
+              <div className="space-y-1">
+                {logs.map((log, index) => (
                   <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: 20 }}
+                    key={`${log.timestamp}-${index}`}
+                    initial={index === 0 ? { opacity: 0, x: -10 } : false}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.05 }}
-                    className="glass rounded-lg p-3 flex items-start gap-3"
+                    className="flex items-start gap-2"
                   >
-                    <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
-                      {log.time}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        {log.type === 'warning' && (
-                          <AlertTriangle className="w-3 h-3 text-signal-red" />
-                        )}
-                        <span className={`text-sm font-mono ${
-                          log.type === 'success' ? 'text-matrix-green' :
-                          log.type === 'warning' ? 'text-signal-red' :
-                          'text-foreground/80'
-                        }`}>
-                          {log.message}
-                        </span>
-                      </div>
-                    </div>
+                    <span className="text-matrix-green/50">[{log.timestamp}]</span>
+                    <span className="text-neon-blue">[{log.module}]</span>
+                    <span className="text-matrix-green/30">&gt;</span>
+                    <span className="text-matrix-green">{log.message}</span>
+                    {index === 0 && (
+                      <span 
+                        className="text-matrix-green ml-1"
+                        style={{ opacity: showCursor ? 1 : 0 }}
+                      >
+                        _
+                      </span>
+                    )}
                   </motion.div>
                 ))}
               </div>
+
+              {/* Command prompt */}
+              <div className="mt-8 flex items-center gap-2 text-matrix-green">
+                <span className="text-neon-blue">neuro@system</span>
+                <span className="text-matrix-green/50">:</span>
+                <span className="text-matrix-green">~$</span>
+                <span 
+                  className="ml-1"
+                  style={{ opacity: showCursor ? 1 : 0 }}
+                >
+                  █
+                </span>
+              </div>
             </div>
 
-            {/* Scan Line Effect */}
+            {/* Scan line effect */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute inset-0 animate-scan-line bg-gradient-to-b from-transparent via-neon-blue/5 to-transparent" />
+              <motion.div
+                animate={{ y: ['-100%', '100%'] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-x-0 h-32 bg-gradient-to-b from-transparent via-matrix-green/5 to-transparent"
+              />
             </div>
+
+            {/* CRT effect lines */}
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 157, 0.03) 2px, rgba(0, 255, 157, 0.03) 4px)'
+              }}
+            />
           </motion.div>
         </>
       )}

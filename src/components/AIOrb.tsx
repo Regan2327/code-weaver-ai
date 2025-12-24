@@ -1,21 +1,85 @@
+import { useEffect, useState, useRef } from "react";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { motion } from "framer-motion";
 
+export type OrbState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
+
 interface AIOrbProps {
-  status: 'idle' | 'listening' | 'thinking' | 'speaking';
+  status: OrbState;
 }
 
 const AIOrb = ({ status }: AIOrbProps) => {
-  const getStatusColor = () => {
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const [animationData, setAnimationData] = useState<object | null>(null);
+  const [hasError, setHasError] = useState(false);
+
+  // Load Lottie animation
+  useEffect(() => {
+    fetch('https://lottie.host/5a6a6e86-8f3e-4682-8cc6-4927514758d4/C7p3j0Xg9s.json')
+      .then(res => res.json())
+      .then(data => setAnimationData(data))
+      .catch(() => setHasError(true));
+  }, []);
+
+  // Control animation based on state
+  useEffect(() => {
+    if (!lottieRef.current) return;
+
+    switch (status) {
+      case 'idle':
+        lottieRef.current.setSpeed(0.5);
+        break;
+      case 'listening':
+        lottieRef.current.setSpeed(1.5);
+        break;
+      case 'processing':
+        lottieRef.current.setSpeed(1);
+        break;
+      case 'speaking':
+        lottieRef.current.setSpeed(1.2);
+        break;
+      case 'error':
+        lottieRef.current.setSpeed(0.3);
+        break;
+    }
+  }, [status]);
+
+  const getContainerStyles = () => {
+    const baseStyles = "relative w-[300px] h-[300px] flex items-center justify-center rounded-full";
+    
     switch (status) {
       case 'listening':
-        return 'from-neon-blue via-matrix-green to-neon-blue';
-      case 'thinking':
-        return 'from-matrix-green via-neon-blue to-matrix-green';
-      case 'speaking':
-        return 'from-neon-blue via-primary to-matrix-green';
+        return `${baseStyles} scale-110`;
+      case 'error':
+        return `${baseStyles} border-2 border-signal-red animate-pulse`;
       default:
-        return 'from-neon-blue via-matrix-green to-neon-blue';
+        return baseStyles;
     }
+  };
+
+  const getGlowColor = () => {
+    switch (status) {
+      case 'listening':
+        return 'hsl(var(--neon-blue) / 0.6)';
+      case 'processing':
+        return 'hsl(280 100% 60% / 0.5)'; // Purple
+      case 'speaking':
+        return 'hsl(var(--matrix-green) / 0.5)';
+      case 'error':
+        return 'hsl(var(--signal-red) / 0.6)';
+      default:
+        return 'hsl(var(--neon-blue) / 0.4)';
+    }
+  };
+
+  const getFilterStyle = () => {
+    if (status === 'processing') {
+      return 'hue-rotate(60deg) saturate(1.5)'; // Shift to purple
+    }
+    if (status === 'error') {
+      return 'hue-rotate(-60deg) saturate(2)'; // Shift to red
+    }
+    return 'none';
   };
 
   return (
@@ -24,107 +88,99 @@ const AIOrb = ({ status }: AIOrbProps) => {
       <motion.div
         animate={{ 
           rotate: 360,
-          scale: [1, 1.1, 1]
+          scale: status === 'listening' ? [1, 1.15, 1] : [1, 1.05, 1],
+          opacity: status === 'error' ? [0.3, 0.8, 0.3] : 1
         }}
         transition={{ 
           rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-          scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+          scale: { duration: status === 'listening' ? 0.5 : 4, repeat: Infinity, ease: "easeInOut" },
+          opacity: { duration: 0.5, repeat: Infinity }
         }}
-        className="absolute w-64 h-64 rounded-full border border-neon-blue/30"
+        className="absolute w-80 h-80 rounded-full"
         style={{
-          boxShadow: '0 0 40px hsl(var(--neon-blue) / 0.2)'
+          border: `1px solid ${status === 'error' ? 'hsl(var(--signal-red) / 0.5)' : 'hsl(var(--neon-blue) / 0.3)'}`,
+          boxShadow: `0 0 40px ${getGlowColor()}`
         }}
       />
       
       <motion.div
         animate={{ rotate: -360 }}
         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="absolute w-56 h-56 rounded-full border border-matrix-green/20"
+        className="absolute w-72 h-72 rounded-full border border-matrix-green/20"
       />
 
       {/* Orbital rings */}
-      <div className="absolute w-48 h-48 preserve-3d animate-ring-spin">
+      <div className="absolute w-64 h-64 preserve-3d animate-ring-spin">
         <div 
           className="absolute inset-0 rounded-full border-2 border-neon-blue/40"
           style={{ transform: 'rotateX(60deg)' }}
         />
       </div>
-      
-      <div className="absolute w-44 h-44 preserve-3d animate-ring-spin-reverse">
-        <div 
-          className="absolute inset-0 rounded-full border border-matrix-green/30"
-          style={{ transform: 'rotateX(75deg) rotateY(20deg)' }}
-        />
-      </div>
 
-      {/* Main orb */}
+      {/* Main Lottie container */}
       <motion.div
         animate={{ 
-          scale: status === 'listening' ? [1, 1.1, 1] : status === 'thinking' ? [1, 1.05, 1] : 1
+          scale: status === 'listening' ? 1.1 : 1,
+          opacity: status === 'processing' ? [0.7, 1, 0.7] : 1
         }}
         transition={{ 
-          duration: status === 'listening' ? 0.5 : 2,
-          repeat: Infinity,
-          ease: "easeInOut"
+          scale: { duration: 0.3 },
+          opacity: { duration: 1, repeat: status === 'processing' ? Infinity : 0 }
         }}
-        className="relative w-32 h-32 animate-float"
+        className={getContainerStyles()}
+        style={{
+          boxShadow: `0 0 80px ${getGlowColor()}, inset 0 0 60px ${getGlowColor()}`
+        }}
       >
-        {/* Core sphere */}
-        <div 
-          className="absolute inset-0 rounded-full animate-orb-breathe"
-          style={{
-            background: `radial-gradient(circle at 30% 30%, 
-              hsl(var(--neon-blue) / 0.8) 0%, 
-              hsl(var(--matrix-green) / 0.4) 40%, 
-              hsl(var(--neon-blue) / 0.2) 70%, 
-              transparent 100%)`
-          }}
-        />
-
-        {/* Inner glow */}
-        <div 
-          className="absolute inset-2 rounded-full animate-orb-pulse"
-          style={{
-            background: `radial-gradient(circle at 40% 40%, 
-              hsl(var(--neon-blue-glow) / 0.9) 0%, 
-              hsl(var(--matrix-green) / 0.5) 50%, 
-              transparent 80%)`
-          }}
-        />
-
-        {/* Highlight */}
-        <div 
-          className="absolute top-3 left-4 w-8 h-8 rounded-full"
-          style={{
-            background: `radial-gradient(circle, 
-              hsl(0 0% 100% / 0.4) 0%, 
-              transparent 70%)`
-          }}
-        />
-
-        {/* Scan line effect */}
-        <div className="absolute inset-0 rounded-full overflow-hidden">
-          <motion.div
-            animate={{ y: ['-100%', '200%'] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            className="w-full h-8 bg-gradient-to-b from-transparent via-neon-blue/20 to-transparent"
+        {animationData ? (
+          <Lottie
+            lottieRef={lottieRef}
+            animationData={animationData}
+            loop
+            autoplay
+            style={{ 
+              width: 280, 
+              height: 280,
+              filter: getFilterStyle()
+            }}
           />
-        </div>
+        ) : hasError ? (
+          // Fallback animated orb if Lottie fails
+          <div 
+            className="w-48 h-48 rounded-full animate-orb-breathe"
+            style={{
+              background: `radial-gradient(circle at 30% 30%, 
+                hsl(var(--neon-blue) / 0.8) 0%, 
+                hsl(var(--matrix-green) / 0.4) 40%, 
+                hsl(var(--neon-blue) / 0.2) 70%, 
+                transparent 100%)`
+            }}
+          />
+        ) : (
+          // Loading state
+          <div className="w-48 h-48 rounded-full animate-pulse bg-neon-blue/20" />
+        )}
       </motion.div>
 
       {/* Status indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="absolute -bottom-8 text-center"
+        className="absolute -bottom-12 text-center"
       >
-        <span className="font-mono text-xs text-neon-blue text-glow-blue uppercase tracking-widest">
+        <span className={`font-mono text-xs uppercase tracking-widest ${
+          status === 'error' 
+            ? 'text-signal-red text-glow-red' 
+            : status === 'processing'
+            ? 'text-purple-400'
+            : 'text-neon-blue text-glow-blue'
+        }`}>
           {status}
         </span>
       </motion.div>
 
       {/* Particle effects */}
-      {[...Array(6)].map((_, i) => (
+      {status !== 'error' && [...Array(6)].map((_, i) => (
         <motion.div
           key={i}
           animate={{
