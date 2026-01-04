@@ -9,12 +9,12 @@ import WarRoom from "@/components/WarRoom";
 import DecisionCard, { FlightOption } from "@/components/DecisionCard";
 import { Message } from "@/components/ChatMessage";
 import { toast } from "@/hooks/use-toast";
+import { useNeuroDriveChat } from "@/hooks/useNeuroDriveChat";
 
 const Index = () => {
   const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [orbStatus, setOrbStatus] = useState<OrbState>('idle');
   const [showDecisionCards, setShowDecisionCards] = useState(false);
   const [flightOptions, setFlightOptions] = useState<FlightOption[]>([
     {
@@ -37,69 +37,31 @@ const Index = () => {
     },
   ]);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: 'NeuroDrive initialized. All systems nominal. How may I assist you today?',
-      sender: 'ai',
-      sentiment: 'calm',
-      timestamp: new Date(),
-    }
-  ]);
+  // Use the real AI chat hook
+  const { messages: aiMessages, sendMessage, isLoading, orbStatus, setOrbStatus } = useNeuroDriveChat();
 
-  const handleSendMessage = useCallback((content: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      sender: 'user',
-      sentiment: 'neutral',
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setOrbStatus('processing');
+  // Convert messages to the format expected by ChatArea
+  const chatMessages: Message[] = aiMessages.map(msg => ({
+    id: msg.id,
+    content: msg.content,
+    sender: msg.isUser ? 'user' : 'ai',
+    sentiment: msg.sentiment || 'neutral',
+    timestamp: msg.timestamp,
+  }));
 
-    // Check for flight-related keywords
+  const handleSendMessage = useCallback(async (content: string) => {
+    // Check for flight-related keywords to show decision cards
     const isFlightQuery = content.toLowerCase().includes('flight') || 
                           content.toLowerCase().includes('book') ||
                           content.toLowerCase().includes('travel');
 
-    setTimeout(() => {
-      let aiResponse: Message;
+    if (isFlightQuery) {
+      setShowDecisionCards(true);
+    }
 
-      if (isFlightQuery) {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          content: "I found 2 optimal flight options for you. Swipe right to accept, left to reject.",
-          sender: 'ai',
-          sentiment: 'success',
-          timestamp: new Date(),
-        };
-        setShowDecisionCards(true);
-      } else {
-        const responses = [
-          { content: "Processing your request through neural pathways. Analysis indicates optimal solution found.", sentiment: 'calm' as const },
-          { content: "WARNING: Elevated security protocol required for this operation. Proceed with caution.", sentiment: 'urgent' as const },
-          { content: "Task completed successfully. All parameters within expected thresholds.", sentiment: 'success' as const },
-          { content: "Understood. Initiating protocol sequence. Estimated completion: 2.3 seconds.", sentiment: 'calm' as const },
-        ];
-        
-        const response = responses[Math.floor(Math.random() * responses.length)];
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          content: response.content,
-          sender: 'ai',
-          sentiment: response.sentiment,
-          timestamp: new Date(),
-        };
-      }
-      
-      setMessages(prev => [...prev, aiResponse]);
-      setOrbStatus('speaking');
-      
-      setTimeout(() => setOrbStatus('idle'), 2000);
-    }, 1500);
-  }, []);
+    // Send to real AI
+    await sendMessage(content);
+  }, [sendMessage]);
 
   const handleToggleListening = useCallback(() => {
     setIsListening(prev => {
@@ -107,7 +69,7 @@ const Index = () => {
       setOrbStatus(newState ? 'listening' : 'idle');
       return newState;
     });
-  }, []);
+  }, [setOrbStatus]);
 
   const handleAcceptFlight = useCallback((id: string) => {
     const flight = flightOptions.find(f => f.id === id);
@@ -118,35 +80,22 @@ const Index = () => {
       description: `${flight?.airline} - $${flight?.price} confirmed.`,
     });
 
-    const aiMessage: Message = {
-      id: Date.now().toString(),
-      content: `Excellent choice. ${flight?.airline} flight booked for $${flight?.price}. Confirmation sent to your neural link.`,
-      sender: 'ai',
-      sentiment: 'success',
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, aiMessage]);
+    // Send acceptance to AI
+    sendMessage(`I accept the ${flight?.airline} flight for $${flight?.price}`);
     
     if (flightOptions.length <= 1) {
       setShowDecisionCards(false);
     }
-  }, [flightOptions]);
+  }, [flightOptions, sendMessage]);
 
   const handleRejectFlight = useCallback((id: string) => {
     setFlightOptions(prev => prev.filter(f => f.id !== id));
     
     if (flightOptions.length <= 1) {
       setShowDecisionCards(false);
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        content: "All options rejected. Shall I search for alternative flights?",
-        sender: 'ai',
-        sentiment: 'calm',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMessage]);
+      sendMessage("I've rejected all the flight options. Can you find alternatives?");
     }
-  }, [flightOptions]);
+  }, [flightOptions, sendMessage]);
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -205,11 +154,12 @@ const Index = () => {
 
         {/* Chat Section */}
         <section className="flex-1 flex flex-col min-h-0 max-w-md mx-auto w-full">
-          <ChatArea messages={messages} />
+          <ChatArea messages={chatMessages} />
           <InputBar 
             onSendMessage={handleSendMessage}
             isListening={isListening}
             onToggleListening={handleToggleListening}
+            disabled={isLoading}
           />
         </section>
       </main>

@@ -6,13 +6,14 @@ interface InputBarProps {
   onSendMessage: (message: string) => void;
   isListening: boolean;
   onToggleListening: () => void;
+  disabled?: boolean;
 }
 
-const InputBar = ({ onSendMessage, isListening, onToggleListening }: InputBarProps) => {
+const InputBar = ({ onSendMessage, isListening, onToggleListening, disabled = false }: InputBarProps) => {
   const [inputText, setInputText] = useState("");
 
   const handleSend = () => {
-    if (inputText.trim()) {
+    if (inputText.trim() && !disabled) {
       onSendMessage(inputText);
       setInputText("");
     }
