@@ -14,12 +14,11 @@ import { searchFlights, isFlightQuery } from "@/lib/flightSearch";
 const Index = () => {
   const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
   const [isGhostMode, setIsGhostMode] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [showDecisionCards, setShowDecisionCards] = useState(false);
   const [flightOptions, setFlightOptions] = useState<FlightOption[]>([]);
 
   // Use the real AI chat hook
-  const { messages: aiMessages, sendMessage, isLoading, orbStatus, setOrbStatus } = useNeuroDriveChat();
+  const { messages: aiMessages, sendMessage, isLoading, orbStatus } = useNeuroDriveChat();
 
   // Convert messages to the format expected by ChatArea
   const chatMessages: Message[] = aiMessages.map(msg => ({
@@ -41,14 +40,6 @@ const Index = () => {
     // Send to real AI
     await sendMessage(content);
   }, [sendMessage]);
-
-  const handleToggleListening = useCallback(() => {
-    setIsListening(prev => {
-      const newState = !prev;
-      setOrbStatus(newState ? 'listening' : 'idle');
-      return newState;
-    });
-  }, [setOrbStatus]);
 
   const handleAcceptFlight = useCallback((id: string) => {
     const flight = flightOptions.find(f => f.id === id);
@@ -139,8 +130,6 @@ const Index = () => {
           <ChatArea messages={chatMessages} />
           <InputBar 
             onSendMessage={handleSendMessage}
-            isListening={isListening}
-            onToggleListening={handleToggleListening}
             disabled={isLoading}
           />
         </section>
