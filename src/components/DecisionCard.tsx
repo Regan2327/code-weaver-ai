@@ -10,6 +10,8 @@ export interface FlightOption {
   duration: string;
   price: number;
   stops: number;
+  origin?: string;
+  destination?: string;
 }
 
 interface DecisionCardProps {
@@ -112,6 +114,15 @@ const DecisionCard = ({ option, onAccept, onReject }: DecisionCardProps) => {
               {option.stops === 0 ? 'DIRECT' : `${option.stops} STOP${option.stops > 1 ? 'S' : ''}`}
             </span>
           </div>
+
+          {/* Route */}
+          {(option.origin || option.destination) && (
+            <div className="flex items-center justify-between mb-2 text-xs font-mono text-muted-foreground">
+              <span>{option.origin || 'Origin'}</span>
+              <span>→</span>
+              <span>{option.destination || 'Destination'}</span>
+            </div>
+          )}
 
           {/* Time */}
           <div className="flex items-center justify-between mb-4">

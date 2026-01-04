@@ -2,7 +2,6 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import NeuroDriveHeader from "@/components/NeuroDriveHeader";
 import AIOrb from "@/components/AIOrb";
-import { OrbState } from "@/components/AIOrb";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
 import WarRoom from "@/components/WarRoom";
@@ -10,32 +9,14 @@ import DecisionCard, { FlightOption } from "@/components/DecisionCard";
 import { Message } from "@/components/ChatMessage";
 import { toast } from "@/hooks/use-toast";
 import { useNeuroDriveChat } from "@/hooks/useNeuroDriveChat";
+import { searchFlights, isFlightQuery } from "@/lib/flightSearch";
 
 const Index = () => {
   const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [showDecisionCards, setShowDecisionCards] = useState(false);
-  const [flightOptions, setFlightOptions] = useState<FlightOption[]>([
-    {
-      id: '1',
-      airline: 'SkyNova Airlines',
-      departureTime: '08:45',
-      arrivalTime: '11:30',
-      duration: '2h 45m',
-      price: 459,
-      stops: 0,
-    },
-    {
-      id: '2',
-      airline: 'Quantum Air',
-      departureTime: '14:20',
-      arrivalTime: '18:05',
-      duration: '3h 45m',
-      price: 329,
-      stops: 1,
-    },
-  ]);
+  const [flightOptions, setFlightOptions] = useState<FlightOption[]>([]);
 
   // Use the real AI chat hook
   const { messages: aiMessages, sendMessage, isLoading, orbStatus, setOrbStatus } = useNeuroDriveChat();
@@ -50,12 +31,10 @@ const Index = () => {
   }));
 
   const handleSendMessage = useCallback(async (content: string) => {
-    // Check for flight-related keywords to show decision cards
-    const isFlightQuery = content.toLowerCase().includes('flight') || 
-                          content.toLowerCase().includes('book') ||
-                          content.toLowerCase().includes('travel');
-
-    if (isFlightQuery) {
+    // Check for flight-related keywords and generate dynamic flight options
+    if (isFlightQuery(content)) {
+      const flights = searchFlights({ query: content });
+      setFlightOptions(flights);
       setShowDecisionCards(true);
     }
 
@@ -77,11 +56,14 @@ const Index = () => {
     
     toast({
       title: "Flight Booked!",
-      description: `${flight?.airline} - $${flight?.price} confirmed.`,
+      description: `${flight?.airline} ${flight?.origin ? `from ${flight.origin}` : ''} ${flight?.destination ? `to ${flight.destination}` : ''} - $${flight?.price} confirmed.`,
     });
 
     // Send acceptance to AI
-    sendMessage(`I accept the ${flight?.airline} flight for $${flight?.price}`);
+    const routeInfo = flight?.origin && flight?.destination 
+      ? ` from ${flight.origin} to ${flight.destination}` 
+      : '';
+    sendMessage(`I accept the ${flight?.airline} flight${routeInfo} for $${flight?.price}`);
     
     if (flightOptions.length <= 1) {
       setShowDecisionCards(false);
