@@ -1,5 +1,3 @@
-import { useEffect, useState, useRef } from "react";
-import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { motion } from "framer-motion";
 
 export type OrbState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
@@ -9,198 +7,294 @@ interface AIOrbProps {
 }
 
 const AIOrb = ({ status }: AIOrbProps) => {
-  const lottieRef = useRef<LottieRefCurrentProps>(null);
-  const [animationData, setAnimationData] = useState<object | null>(null);
-  const [hasError, setHasError] = useState(false);
-
-  // Load Lottie animation
-  useEffect(() => {
-    fetch('https://lottie.host/5a6a6e86-8f3e-4682-8cc6-4927514758d4/C7p3j0Xg9s.json')
-      .then(res => res.json())
-      .then(data => setAnimationData(data))
-      .catch(() => setHasError(true));
-  }, []);
-
-  // Control animation based on state
-  useEffect(() => {
-    if (!lottieRef.current) return;
-
-    switch (status) {
-      case 'idle':
-        lottieRef.current.setSpeed(0.5);
-        break;
-      case 'listening':
-        lottieRef.current.setSpeed(1.5);
-        break;
-      case 'processing':
-        lottieRef.current.setSpeed(1);
-        break;
-      case 'speaking':
-        lottieRef.current.setSpeed(1.2);
-        break;
-      case 'error':
-        lottieRef.current.setSpeed(0.3);
-        break;
-    }
-  }, [status]);
-
-  const getContainerStyles = () => {
-    const baseStyles = "relative w-[300px] h-[300px] flex items-center justify-center rounded-full";
-    
-    switch (status) {
-      case 'listening':
-        return `${baseStyles} scale-110`;
-      case 'error':
-        return `${baseStyles} border-2 border-signal-red animate-pulse`;
-      default:
-        return baseStyles;
-    }
-  };
-
   const getGlowColor = () => {
     switch (status) {
       case 'listening':
-        return 'hsl(var(--neon-blue) / 0.6)';
+        return 'rgba(0, 243, 255, 0.6)';
       case 'processing':
-        return 'hsl(280 100% 60% / 0.5)'; // Purple
+        return 'rgba(168, 85, 247, 0.6)';
       case 'speaking':
-        return 'hsl(var(--matrix-green) / 0.5)';
+        return 'rgba(5, 213, 250, 0.5)';
       case 'error':
-        return 'hsl(var(--signal-red) / 0.6)';
+        return 'rgba(255, 42, 109, 0.6)';
       default:
-        return 'hsl(var(--neon-blue) / 0.4)';
+        return 'rgba(0, 243, 255, 0.4)';
     }
   };
 
-  const getFilterStyle = () => {
-    if (status === 'processing') {
-      return 'hue-rotate(60deg) saturate(1.5)'; // Shift to purple
+  const getCoreGradient = () => {
+    switch (status) {
+      case 'listening':
+        return 'radial-gradient(circle at 30% 30%, rgba(0, 243, 255, 1) 0%, rgba(0, 243, 255, 0.6) 30%, rgba(5, 213, 250, 0.3) 60%, transparent 100%)';
+      case 'processing':
+        return 'radial-gradient(circle at 30% 30%, rgba(168, 85, 247, 1) 0%, rgba(139, 92, 246, 0.6) 30%, rgba(168, 85, 247, 0.3) 60%, transparent 100%)';
+      case 'speaking':
+        return 'radial-gradient(circle at 30% 30%, rgba(5, 213, 250, 1) 0%, rgba(0, 243, 255, 0.6) 30%, rgba(5, 213, 250, 0.3) 60%, transparent 100%)';
+      case 'error':
+        return 'radial-gradient(circle at 30% 30%, rgba(255, 42, 109, 1) 0%, rgba(255, 42, 109, 0.6) 30%, rgba(255, 42, 109, 0.3) 60%, transparent 100%)';
+      default:
+        return 'radial-gradient(circle at 30% 30%, rgba(0, 243, 255, 0.9) 0%, rgba(5, 213, 250, 0.5) 30%, rgba(0, 243, 255, 0.2) 60%, transparent 100%)';
     }
-    if (status === 'error') {
-      return 'hue-rotate(-60deg) saturate(2)'; // Shift to red
+  };
+
+  const getPulseSpeed = () => {
+    switch (status) {
+      case 'idle': return 4;
+      case 'listening': return 0.6;
+      case 'processing': return 1.2;
+      case 'speaking': return 0.8;
+      case 'error': return 0.3;
     }
-    return 'none';
+  };
+
+  const getScale = () => {
+    switch (status) {
+      case 'listening': return [1, 1.15, 1];
+      case 'processing': return [1, 1.08, 1];
+      case 'speaking': return [1, 1.1, 1];
+      case 'error': return [1, 0.95, 1];
+      default: return [1, 1.05, 1];
+    }
   };
 
   return (
-    <div className="relative flex items-center justify-center perspective-1000">
-      {/* Outer glow rings */}
+    <div className="relative flex items-center justify-center">
+      {/* Outermost glow ring */}
       <motion.div
         animate={{ 
           rotate: 360,
-          scale: status === 'listening' ? [1, 1.15, 1] : [1, 1.05, 1],
-          opacity: status === 'error' ? [0.3, 0.8, 0.3] : 1
+          scale: status === 'listening' ? [1, 1.1, 1] : 1,
         }}
         transition={{ 
           rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-          scale: { duration: status === 'listening' ? 0.5 : 4, repeat: Infinity, ease: "easeInOut" },
-          opacity: { duration: 0.5, repeat: Infinity }
+          scale: { duration: 1, repeat: Infinity, ease: "easeInOut" }
         }}
         className="absolute w-80 h-80 rounded-full"
         style={{
-          border: `1px solid ${status === 'error' ? 'hsl(var(--signal-red) / 0.5)' : 'hsl(var(--neon-blue) / 0.3)'}`,
-          boxShadow: `0 0 40px ${getGlowColor()}`
+          border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.4)' : 'rgba(0, 243, 255, 0.2)'}`,
+          boxShadow: `0 0 60px ${getGlowColor()}`
         }}
       />
-      
+
+      {/* Second ring - counter rotation */}
       <motion.div
         animate={{ rotate: -360 }}
         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="absolute w-72 h-72 rounded-full border border-matrix-green/20"
+        className="absolute w-72 h-72 rounded-full"
+        style={{
+          border: '1px solid rgba(5, 213, 250, 0.15)'
+        }}
       />
 
-      {/* Orbital rings */}
-      <div className="absolute w-64 h-64 preserve-3d animate-ring-spin">
-        <div 
-          className="absolute inset-0 rounded-full border-2 border-neon-blue/40"
-          style={{ transform: 'rotateX(60deg)' }}
-        />
-      </div>
+      {/* Third ring - 3D effect */}
+      <motion.div
+        animate={{ rotateX: [60, 70, 60], rotateY: [0, 360, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+        className="absolute w-64 h-64 rounded-full"
+        style={{
+          border: '2px solid rgba(0, 243, 255, 0.3)',
+          transformStyle: 'preserve-3d'
+        }}
+      />
 
-      {/* Main Lottie container */}
+      {/* Inner pulsing ring */}
       <motion.div
         animate={{ 
-          scale: status === 'listening' ? 1.1 : 1,
-          opacity: status === 'processing' ? [0.7, 1, 0.7] : 1
+          scale: [1, 1.1, 1],
+          opacity: [0.5, 0.8, 0.5]
         }}
         transition={{ 
-          scale: { duration: 0.3 },
-          opacity: { duration: 1, repeat: status === 'processing' ? Infinity : 0 }
+          duration: getPulseSpeed(),
+          repeat: Infinity,
+          ease: "easeInOut"
         }}
-        className={getContainerStyles()}
+        className="absolute w-56 h-56 rounded-full"
         style={{
-          boxShadow: `0 0 80px ${getGlowColor()}, inset 0 0 60px ${getGlowColor()}`
+          border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.5)' : 'rgba(0, 243, 255, 0.4)'}`,
         }}
+      />
+
+      {/* Main orb container */}
+      <motion.div
+        animate={{ 
+          scale: getScale(),
+        }}
+        transition={{ 
+          duration: getPulseSpeed(),
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="relative w-[200px] h-[200px] flex items-center justify-center"
       >
-        {animationData ? (
-          <Lottie
-            lottieRef={lottieRef}
-            animationData={animationData}
-            loop
-            autoplay
-            style={{ 
-              width: 280, 
-              height: 280,
-              filter: getFilterStyle()
-            }}
-          />
-        ) : hasError ? (
-          // Fallback animated orb if Lottie fails
+        {/* Orb glow background */}
+        <motion.div
+          animate={{ 
+            opacity: status === 'processing' ? [0.6, 1, 0.6] : [0.8, 1, 0.8],
+          }}
+          transition={{ 
+            duration: getPulseSpeed() * 0.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: getCoreGradient(),
+            boxShadow: `
+              0 0 60px ${getGlowColor()},
+              0 0 120px ${getGlowColor()},
+              inset 0 0 60px ${getGlowColor()}
+            `,
+            filter: 'blur(1px)'
+          }}
+        />
+
+        {/* Core sphere */}
+        <motion.div
+          animate={{ 
+            scale: status === 'listening' ? [0.9, 1, 0.9] : [0.95, 1, 0.95],
+          }}
+          transition={{ 
+            duration: getPulseSpeed() * 0.7,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="relative w-32 h-32 rounded-full"
+          style={{
+            background: getCoreGradient(),
+            boxShadow: `
+              0 0 40px ${getGlowColor()},
+              inset -10px -10px 30px rgba(0, 0, 0, 0.3),
+              inset 10px 10px 30px rgba(255, 255, 255, 0.1)
+            `
+          }}
+        >
+          {/* Highlight */}
           <div 
-            className="w-48 h-48 rounded-full animate-orb-breathe"
+            className="absolute top-4 left-6 w-8 h-6 rounded-full opacity-60"
             style={{
-              background: `radial-gradient(circle at 30% 30%, 
-                hsl(var(--neon-blue) / 0.8) 0%, 
-                hsl(var(--matrix-green) / 0.4) 40%, 
-                hsl(var(--neon-blue) / 0.2) 70%, 
-                transparent 100%)`
+              background: 'radial-gradient(ellipse, rgba(255,255,255,0.8) 0%, transparent 70%)'
             }}
           />
-        ) : (
-          // Loading state
-          <div className="w-48 h-48 rounded-full animate-pulse bg-neon-blue/20" />
-        )}
+          
+          {/* Secondary highlight */}
+          <div 
+            className="absolute top-8 left-10 w-4 h-3 rounded-full opacity-40"
+            style={{
+              background: 'radial-gradient(ellipse, rgba(255,255,255,0.6) 0%, transparent 70%)'
+            }}
+          />
+        </motion.div>
+
+        {/* Energy waves */}
+        {[...Array(3)].map((_, i) => (
+          <motion.div
+            key={`wave-${i}`}
+            animate={{ 
+              scale: [1, 2, 2.5],
+              opacity: [0.6, 0.2, 0]
+            }}
+            transition={{ 
+              duration: 2,
+              delay: i * 0.6,
+              repeat: Infinity,
+              ease: "easeOut"
+            }}
+            className="absolute w-32 h-32 rounded-full"
+            style={{
+              border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.5)' : 'rgba(0, 243, 255, 0.5)'}`
+            }}
+          />
+        ))}
       </motion.div>
+
+      {/* Floating particles */}
+      {status !== 'error' && [...Array(8)].map((_, i) => (
+        <motion.div
+          key={`particle-${i}`}
+          animate={{
+            y: [-30, -80, -30],
+            x: [0, (i % 2 === 0 ? 15 : -15), 0],
+            opacity: [0, 0.8, 0],
+            scale: [0.5, 1, 0.5]
+          }}
+          transition={{
+            duration: 3 + i * 0.3,
+            delay: i * 0.4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute w-1.5 h-1.5 rounded-full"
+          style={{
+            left: `${45 + (i - 4) * 8}%`,
+            bottom: '35%',
+            background: status === 'processing' 
+              ? 'rgba(168, 85, 247, 0.8)' 
+              : 'rgba(0, 243, 255, 0.8)',
+            boxShadow: `0 0 10px ${status === 'processing' ? 'rgba(168, 85, 247, 0.8)' : 'rgba(0, 243, 255, 0.8)'}`
+          }}
+        />
+      ))}
+
+      {/* Orbiting dots */}
+      {[...Array(3)].map((_, i) => (
+        <motion.div
+          key={`orbit-${i}`}
+          animate={{ rotate: 360 }}
+          transition={{ 
+            duration: 6 + i * 2,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute"
+          style={{
+            width: 220 + i * 30,
+            height: 220 + i * 30,
+          }}
+        >
+          <motion.div
+            className="absolute w-2 h-2 rounded-full"
+            style={{
+              top: '50%',
+              left: 0,
+              transform: 'translateY(-50%)',
+              background: status === 'error' 
+                ? 'rgba(255, 42, 109, 0.8)' 
+                : 'rgba(0, 243, 255, 0.8)',
+              boxShadow: `0 0 8px ${status === 'error' ? 'rgba(255, 42, 109, 0.8)' : 'rgba(0, 243, 255, 0.8)'}`
+            }}
+          />
+        </motion.div>
+      ))}
 
       {/* Status indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="absolute -bottom-12 text-center"
+        className="absolute -bottom-16 text-center"
       >
-        <span className={`font-mono text-xs uppercase tracking-widest ${
-          status === 'error' 
-            ? 'text-signal-red text-glow-red' 
-            : status === 'processing'
-            ? 'text-purple-400'
-            : 'text-neon-blue text-glow-blue'
-        }`}>
-          {status}
-        </span>
-      </motion.div>
-
-      {/* Particle effects */}
-      {status !== 'error' && [...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          animate={{
-            y: [-20, -60, -20],
-            x: [0, (i % 2 === 0 ? 10 : -10), 0],
-            opacity: [0, 1, 0],
-          }}
-          transition={{
-            duration: 3,
-            delay: i * 0.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute w-1 h-1 rounded-full bg-neon-blue"
+        <motion.span 
+          animate={{ opacity: status === 'error' ? [1, 0.5, 1] : 1 }}
+          transition={{ duration: 0.5, repeat: status === 'error' ? Infinity : 0 }}
+          className={`font-mono text-xs uppercase tracking-[0.3em] ${
+            status === 'error' 
+              ? 'text-signal-red' 
+              : status === 'processing'
+              ? 'text-purple-400'
+              : status === 'speaking'
+              ? 'text-matrix-green'
+              : 'text-neon-blue'
+          }`}
           style={{
-            left: `${50 + (i - 3) * 15}%`,
-            bottom: '40%'
+            textShadow: status === 'error' 
+              ? '0 0 10px rgba(255, 42, 109, 0.8)' 
+              : status === 'processing'
+              ? '0 0 10px rgba(168, 85, 247, 0.8)'
+              : '0 0 10px rgba(0, 243, 255, 0.8)'
           }}
-        />
-      ))}
+        >
+          {status}
+        </motion.span>
+      </motion.div>
     </div>
   );
 };
