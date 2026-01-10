@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSpeechSynthesis } from './useSpeechSynthesis';
 
 export interface Message {
   id: string;
@@ -11,7 +12,22 @@ export interface Message {
 
 type OrbStatus = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
 
-export const useNeuroDriveChat = () => {
+interface UseNeuroDriveChatOptions {
+  voiceEnabled?: boolean;
+}
+
+export const useNeuroDriveChat = (options: UseNeuroDriveChatOptions = {}) => {
+  const { voiceEnabled = true } = options;
+  
+  const pendingSpeechRef = useRef<string | null>(null);
+  
+  const { speak, stop: stopSpeaking, isSpeaking, isSupported: isSpeechSupported } = useSpeechSynthesis({
+    rate: 1.0,
+    pitch: 1.0,
+    onStart: () => setOrbStatus('speaking'),
+    onEnd: () => setOrbStatus('idle'),
+  });
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -140,7 +156,7 @@ export const useNeuroDriveChat = () => {
         }
       }
 
-      // Final sentiment analysis
+      // Final sentiment analysis and speak the response
       const finalSentiment = analyzeSentiment(assistantContent);
       setMessages(prev => 
         prev.map(msg => 
@@ -149,6 +165,11 @@ export const useNeuroDriveChat = () => {
             : msg
         )
       );
+
+      // Speak the complete response if voice is enabled
+      if (voiceEnabled && isSpeechSupported && assistantContent.trim()) {
+        pendingSpeechRef.current = assistantContent;
+      }
 
     } catch (error) {
       console.error('Chat error:', error);
@@ -166,11 +187,23 @@ export const useNeuroDriveChat = () => {
       setTimeout(() => setOrbStatus('idle'), 2000);
     } finally {
       setIsLoading(false);
-      if (orbStatus !== 'error') {
+      
+      // Speak pending content after loading completes
+      if (pendingSpeechRef.current) {
+        speak(pendingSpeechRef.current);
+        pendingSpeechRef.current = null;
+      } else if (orbStatus !== 'error') {
         setOrbStatus('idle');
       }
     }
-  }, [messages, isLoading, orbStatus]);
+  }, [messages, isLoading, orbStatus, voiceEnabled, isSpeechSupported, speak]);
+
+  // Toggle voice output
+  const toggleVoice = useCallback(() => {
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+  }, [isSpeaking, stopSpeaking]);
 
   return {
     messages,
@@ -178,5 +211,9 @@ export const useNeuroDriveChat = () => {
     isLoading,
     orbStatus,
     setOrbStatus,
+    isSpeaking,
+    isSpeechSupported,
+    stopSpeaking,
+    toggleVoice,
   };
 };

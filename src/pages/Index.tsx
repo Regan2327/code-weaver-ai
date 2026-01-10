@@ -18,7 +18,15 @@ const Index = () => {
   const [flightOptions, setFlightOptions] = useState<FlightOption[]>([]);
 
   // Use the real AI chat hook
-  const { messages: aiMessages, sendMessage, isLoading, orbStatus } = useNeuroDriveChat();
+  const { 
+    messages: aiMessages, 
+    sendMessage, 
+    isLoading, 
+    orbStatus,
+    isSpeaking,
+    isSpeechSupported,
+    stopSpeaking,
+  } = useNeuroDriveChat();
 
   // Convert messages to the format expected by ChatArea
   const chatMessages: Message[] = aiMessages.map(msg => ({
@@ -131,6 +139,9 @@ const Index = () => {
           <InputBar 
             onSendMessage={handleSendMessage}
             disabled={isLoading}
+            isSpeaking={isSpeaking}
+            onStopSpeaking={stopSpeaking}
+            isSpeechSupported={isSpeechSupported}
           />
         </section>
       </main>

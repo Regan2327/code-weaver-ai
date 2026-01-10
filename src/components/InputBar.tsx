@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Camera, Send, MicOff } from "lucide-react";
+import { Mic, Camera, Send, MicOff, Volume2, VolumeX } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { toast } from "@/hooks/use-toast";
@@ -7,9 +7,18 @@ import { toast } from "@/hooks/use-toast";
 interface InputBarProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
+  isSpeaking?: boolean;
+  onStopSpeaking?: () => void;
+  isSpeechSupported?: boolean;
 }
 
-const InputBar = ({ onSendMessage, disabled = false }: InputBarProps) => {
+const InputBar = ({ 
+  onSendMessage, 
+  disabled = false,
+  isSpeaking = false,
+  onStopSpeaking,
+  isSpeechSupported = true,
+}: InputBarProps) => {
   const [inputText, setInputText] = useState("");
 
   const { 
@@ -117,6 +126,24 @@ const InputBar = ({ onSendMessage, disabled = false }: InputBarProps) => {
               className="p-3 rounded-xl bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 transition-all duration-300 disabled:opacity-50"
             >
               <Send className="w-5 h-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Speaker Button - shows when AI is speaking */}
+        <AnimatePresence>
+          {isSpeaking && (
+            <motion.button
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onStopSpeaking}
+              className="p-3 rounded-xl bg-matrix-green/20 text-matrix-green hover:bg-matrix-green/30 transition-all duration-300 animate-pulse"
+              title="Stop speaking"
+            >
+              <Volume2 className="w-5 h-5" />
             </motion.button>
           )}
         </AnimatePresence>
