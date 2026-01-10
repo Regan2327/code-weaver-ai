@@ -21,12 +21,24 @@ export const useNeuroDriveChat = (options: UseNeuroDriveChatOptions = {}) => {
   
   const pendingSpeechRef = useRef<string | null>(null);
   
-  const { speak, stop: stopSpeaking, isSpeaking, isSupported: isSpeechSupported } = useSpeechSynthesis({
-    rate: 1.0,
-    pitch: 1.0,
+  const speechSynthesis = useSpeechSynthesis({
     onStart: () => setOrbStatus('speaking'),
     onEnd: () => setOrbStatus('idle'),
   });
+
+  const { 
+    speak, 
+    stop: stopSpeaking, 
+    isSpeaking, 
+    isSupported: isSpeechSupported,
+    voices,
+    currentVoice,
+    setCurrentVoice,
+    rate,
+    setRate,
+    pitch,
+    setPitch,
+  } = speechSynthesis;
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -205,6 +217,11 @@ export const useNeuroDriveChat = (options: UseNeuroDriveChatOptions = {}) => {
     }
   }, [isSpeaking, stopSpeaking]);
 
+  // Test voice with sample text
+  const testVoice = useCallback(() => {
+    speak("NeuroDrive voice systems online. How may I assist you today?");
+  }, [speak]);
+
   return {
     messages,
     sendMessage,
@@ -215,5 +232,14 @@ export const useNeuroDriveChat = (options: UseNeuroDriveChatOptions = {}) => {
     isSpeechSupported,
     stopSpeaking,
     toggleVoice,
+    // Voice settings
+    voices,
+    currentVoice,
+    setCurrentVoice,
+    rate,
+    setRate,
+    pitch,
+    setPitch,
+    testVoice,
   };
 };

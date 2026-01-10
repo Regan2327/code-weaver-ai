@@ -5,6 +5,7 @@ import AIOrb from "@/components/AIOrb";
 import ChatArea from "@/components/ChatArea";
 import InputBar from "@/components/InputBar";
 import WarRoom from "@/components/WarRoom";
+import VoiceSettings from "@/components/VoiceSettings";
 import DecisionCard, { FlightOption } from "@/components/DecisionCard";
 import { Message } from "@/components/ChatMessage";
 import { toast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ const Index = () => {
   const [isGhostMode, setIsGhostMode] = useState(false);
   const [showDecisionCards, setShowDecisionCards] = useState(false);
   const [flightOptions, setFlightOptions] = useState<FlightOption[]>([]);
+  const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
 
   // Use the real AI chat hook
   const { 
@@ -26,6 +28,15 @@ const Index = () => {
     isSpeaking,
     isSpeechSupported,
     stopSpeaking,
+    // Voice settings
+    voices,
+    currentVoice,
+    setCurrentVoice,
+    rate,
+    setRate,
+    pitch,
+    setPitch,
+    testVoice,
   } = useNeuroDriveChat();
 
   // Convert messages to the format expected by ChatArea
@@ -142,6 +153,7 @@ const Index = () => {
             isSpeaking={isSpeaking}
             onStopSpeaking={stopSpeaking}
             isSpeechSupported={isSpeechSupported}
+            onOpenVoiceSettings={() => setIsVoiceSettingsOpen(true)}
           />
         </section>
       </main>
@@ -150,6 +162,20 @@ const Index = () => {
       <WarRoom 
         isOpen={isWarRoomOpen} 
         onClose={() => setIsWarRoomOpen(false)} 
+      />
+
+      {/* Voice Settings Panel */}
+      <VoiceSettings
+        isOpen={isVoiceSettingsOpen}
+        onClose={() => setIsVoiceSettingsOpen(false)}
+        voices={voices}
+        currentVoice={currentVoice}
+        onVoiceChange={setCurrentVoice}
+        rate={rate}
+        onRateChange={setRate}
+        pitch={pitch}
+        onPitchChange={setPitch}
+        onTestVoice={testVoice}
       />
 
       {/* Ghost Mode Overlay */}

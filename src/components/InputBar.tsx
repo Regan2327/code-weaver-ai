@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Camera, Send, MicOff, Volume2, VolumeX } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Mic, Camera, Send, MicOff, Volume2, Settings2 } from "lucide-react";
+import { useState } from "react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { toast } from "@/hooks/use-toast";
 
@@ -10,6 +10,7 @@ interface InputBarProps {
   isSpeaking?: boolean;
   onStopSpeaking?: () => void;
   isSpeechSupported?: boolean;
+  onOpenVoiceSettings?: () => void;
 }
 
 const InputBar = ({ 
@@ -18,6 +19,7 @@ const InputBar = ({
   isSpeaking = false,
   onStopSpeaking,
   isSpeechSupported = true,
+  onOpenVoiceSettings,
 }: InputBarProps) => {
   const [inputText, setInputText] = useState("");
 
@@ -90,13 +92,15 @@ const InputBar = ({
       className="sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8"
     >
       <div className="glass rounded-2xl p-2 flex items-center gap-2 max-w-md mx-auto">
-        {/* Camera Button */}
+        {/* Voice Settings Button */}
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          onClick={onOpenVoiceSettings}
           className="p-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-300"
+          title="Voice settings"
         >
-          <Camera className="w-5 h-5" />
+          <Settings2 className="w-5 h-5" />
         </motion.button>
 
         {/* Text Input */}
