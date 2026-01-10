@@ -2,9 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseSpeechSynthesisOptions {
   voice?: string;
-  rate?: number;
-  pitch?: number;
-  volume?: number;
   onStart?: () => void;
   onEnd?: () => void;
   onError?: (error: string) => void;
@@ -13,9 +10,6 @@ interface UseSpeechSynthesisOptions {
 export const useSpeechSynthesis = (options: UseSpeechSynthesisOptions = {}) => {
   const {
     voice: preferredVoice,
-    rate = 1,
-    pitch = 1,
-    volume = 1,
     onStart,
     onEnd,
     onError,
@@ -25,6 +19,9 @@ export const useSpeechSynthesis = (options: UseSpeechSynthesisOptions = {}) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [currentVoice, setCurrentVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [rate, setRate] = useState(1);
+  const [pitch, setPitch] = useState(1);
+  const [volume, setVolume] = useState(1);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Check browser support and load voices
@@ -36,8 +33,8 @@ export const useSpeechSynthesis = (options: UseSpeechSynthesisOptions = {}) => {
         const availableVoices = window.speechSynthesis.getVoices();
         setVoices(availableVoices);
 
-        // Find preferred voice or use a good default
-        if (availableVoices.length > 0) {
+        // Find preferred voice or use a good default (only if no voice selected yet)
+        if (availableVoices.length > 0 && !currentVoice) {
           let selectedVoice = availableVoices.find(v => 
             v.name.toLowerCase().includes(preferredVoice?.toLowerCase() || '')
           );
@@ -67,7 +64,7 @@ export const useSpeechSynthesis = (options: UseSpeechSynthesisOptions = {}) => {
         window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
       };
     }
-  }, [preferredVoice]);
+  }, [preferredVoice, currentVoice]);
 
   const speak = useCallback((text: string) => {
     if (!isSupported || !text.trim()) return;
@@ -129,6 +126,12 @@ export const useSpeechSynthesis = (options: UseSpeechSynthesisOptions = {}) => {
     voices,
     currentVoice,
     setCurrentVoice,
+    rate,
+    setRate,
+    pitch,
+    setPitch,
+    volume,
+    setVolume,
     speak,
     stop,
     pause,
