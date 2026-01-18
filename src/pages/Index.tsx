@@ -10,7 +10,7 @@ import DecisionCard, { FlightOption } from "@/components/DecisionCard";
 import { Message } from "@/components/ChatMessage";
 import { toast } from "@/hooks/use-toast";
 import { useNeuroDriveChat } from "@/hooks/useNeuroDriveChat";
-import { searchFlights, isFlightQuery } from "@/lib/flightSearch";
+import { searchFlightsAPI, searchFlightsMock, isFlightQuery } from "@/lib/flightSearch";
 
 const Index = () => {
   const [isWarRoomOpen, setIsWarRoomOpen] = useState(false);
@@ -18,6 +18,7 @@ const Index = () => {
   const [showDecisionCards, setShowDecisionCards] = useState(false);
   const [flightOptions, setFlightOptions] = useState<FlightOption[]>([]);
   const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
+  const [isSearchingFlights, setIsSearchingFlights] = useState(false);
 
   // Use the real AI chat hook
   const { 
@@ -49,11 +50,42 @@ const Index = () => {
   }));
 
   const handleSendMessage = useCallback(async (content: string) => {
-    // Check for flight-related keywords and generate dynamic flight options
+    // Check for flight-related keywords and search via Amadeus API
     if (isFlightQuery(content)) {
-      const flights = searchFlights({ query: content });
-      setFlightOptions(flights);
-      setShowDecisionCards(true);
+      setIsSearchingFlights(true);
+      
+      try {
+        // Try real API first
+        const result = await searchFlightsAPI({ query: content });
+        
+        if (result.flights.length > 0) {
+          setFlightOptions(result.flights);
+          setShowDecisionCards(true);
+          toast({
+            title: "Live Flights Found",
+            description: `Found ${result.flights.length} flights via Amadeus API`,
+          });
+        } else if (result.error) {
+          // Fall back to mock data
+          console.log('[FlightSearch] Falling back to mock data:', result.error);
+          const mockFlights = searchFlightsMock({ query: content });
+          setFlightOptions(mockFlights);
+          setShowDecisionCards(true);
+          toast({
+            title: "Using Demo Data",
+            description: result.error,
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('[FlightSearch] Error:', error);
+        // Fall back to mock data
+        const mockFlights = searchFlightsMock({ query: content });
+        setFlightOptions(mockFlights);
+        setShowDecisionCards(true);
+      } finally {
+        setIsSearchingFlights(false);
+      }
     }
 
     // Send to real AI
