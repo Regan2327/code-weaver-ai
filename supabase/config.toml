@@ -1,1 +1,13 @@
 project_id = "ucscxjfvwyoqwreqtzzg"
+
+[functions.chat]
+verify_jwt = false
+
+[functions.flight-search]
+verify_jwt = false
+
+[functions.flight-search-mock]
+verify_jwt = false
+
+[functions.tool-orchestrator]
+verify_jwt = false

@@ -14,13 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      system_logs: {
+        Row: {
+          backup_tool: string | null
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          session_id: string | null
+          tool_name: string | null
+          type: string
+        }
+        Insert: {
+          backup_tool?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          session_id?: string | null
+          tool_name?: string | null
+          type: string
+        }
+        Update: {
+          backup_tool?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          session_id?: string | null
+          tool_name?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      tools: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          embedding: string | null
+          endpoint: string | null
+          fallback_tools: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          priority: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          embedding?: string | null
+          endpoint?: string | null
+          fallback_tools?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          priority?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          embedding?: string | null
+          endpoint?: string | null
+          fallback_tools?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          priority?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_tools: {
+        Args: {
+          failed_tool: string
+          match_count?: number
+          query_category: string
+        }
+        Returns: {
+          category: string
+          description: string
+          endpoint: string
+          id: string
+          name: string
+          priority: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

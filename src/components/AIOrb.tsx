@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-export type OrbState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
+export type OrbState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error' | 'healing';
 
 interface AIOrbProps {
   status: OrbState;
@@ -17,6 +17,8 @@ const AIOrb = ({ status }: AIOrbProps) => {
         return 'rgba(5, 213, 250, 0.5)';
       case 'error':
         return 'rgba(255, 42, 109, 0.6)';
+      case 'healing':
+        return 'rgba(245, 158, 11, 0.6)';
       default:
         return 'rgba(0, 243, 255, 0.4)';
     }
@@ -32,6 +34,8 @@ const AIOrb = ({ status }: AIOrbProps) => {
         return 'radial-gradient(circle at 30% 30%, rgba(5, 213, 250, 1) 0%, rgba(0, 243, 255, 0.6) 30%, rgba(5, 213, 250, 0.3) 60%, transparent 100%)';
       case 'error':
         return 'radial-gradient(circle at 30% 30%, rgba(255, 42, 109, 1) 0%, rgba(255, 42, 109, 0.6) 30%, rgba(255, 42, 109, 0.3) 60%, transparent 100%)';
+      case 'healing':
+        return 'radial-gradient(circle at 30% 30%, rgba(245, 158, 11, 1) 0%, rgba(251, 191, 36, 0.6) 30%, rgba(245, 158, 11, 0.3) 60%, transparent 100%)';
       default:
         return 'radial-gradient(circle at 30% 30%, rgba(0, 243, 255, 0.9) 0%, rgba(5, 213, 250, 0.5) 30%, rgba(0, 243, 255, 0.2) 60%, transparent 100%)';
     }
@@ -44,6 +48,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
       case 'processing': return 1.2;
       case 'speaking': return 0.8;
       case 'error': return 0.3;
+      case 'healing': return 0.5;
     }
   };
 
@@ -53,7 +58,36 @@ const AIOrb = ({ status }: AIOrbProps) => {
       case 'processing': return [1, 1.08, 1];
       case 'speaking': return [1, 1.1, 1];
       case 'error': return [1, 0.95, 1];
+      case 'healing': return [1, 1.12, 0.98, 1.12, 1];
       default: return [1, 1.05, 1];
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'error':
+        return 'text-signal-red';
+      case 'processing':
+        return 'text-purple-400';
+      case 'speaking':
+        return 'text-matrix-green';
+      case 'healing':
+        return 'text-amber-500';
+      default:
+        return 'text-neon-blue';
+    }
+  };
+
+  const getStatusGlow = () => {
+    switch (status) {
+      case 'error':
+        return '0 0 10px rgba(255, 42, 109, 0.8)';
+      case 'processing':
+        return '0 0 10px rgba(168, 85, 247, 0.8)';
+      case 'healing':
+        return '0 0 10px rgba(245, 158, 11, 0.8)';
+      default:
+        return '0 0 10px rgba(0, 243, 255, 0.8)';
     }
   };
 
@@ -62,16 +96,16 @@ const AIOrb = ({ status }: AIOrbProps) => {
       {/* Outermost glow ring */}
       <motion.div
         animate={{ 
-          rotate: 360,
-          scale: status === 'listening' ? [1, 1.1, 1] : 1,
+          rotate: status === 'healing' ? [0, 360] : 360,
+          scale: status === 'listening' ? [1, 1.1, 1] : status === 'healing' ? [1, 1.15, 1] : 1,
         }}
         transition={{ 
-          rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+          rotate: { duration: status === 'healing' ? 2 : 20, repeat: Infinity, ease: status === 'healing' ? 'easeInOut' : 'linear' },
           scale: { duration: 1, repeat: Infinity, ease: "easeInOut" }
         }}
         className="absolute w-80 h-80 rounded-full"
         style={{
-          border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.4)' : 'rgba(0, 243, 255, 0.2)'}`,
+          border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.4)' : status === 'healing' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(0, 243, 255, 0.2)'}`,
           boxShadow: `0 0 60px ${getGlowColor()}`
         }}
       />
@@ -82,7 +116,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
         transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
         className="absolute w-72 h-72 rounded-full"
         style={{
-          border: '1px solid rgba(5, 213, 250, 0.15)'
+          border: `1px solid ${status === 'healing' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(5, 213, 250, 0.15)'}`
         }}
       />
 
@@ -92,7 +126,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
         transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
         className="absolute w-64 h-64 rounded-full"
         style={{
-          border: '2px solid rgba(0, 243, 255, 0.3)',
+          border: `2px solid ${status === 'healing' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(0, 243, 255, 0.3)'}`,
           transformStyle: 'preserve-3d'
         }}
       />
@@ -110,7 +144,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
         }}
         className="absolute w-56 h-56 rounded-full"
         style={{
-          border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.5)' : 'rgba(0, 243, 255, 0.4)'}`,
+          border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.5)' : status === 'healing' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(0, 243, 255, 0.4)'}`,
         }}
       />
 
@@ -129,7 +163,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
         {/* Orb glow background */}
         <motion.div
           animate={{ 
-            opacity: status === 'processing' ? [0.6, 1, 0.6] : [0.8, 1, 0.8],
+            opacity: status === 'processing' ? [0.6, 1, 0.6] : status === 'healing' ? [0.5, 1, 0.5] : [0.8, 1, 0.8],
           }}
           transition={{ 
             duration: getPulseSpeed() * 0.5,
@@ -151,7 +185,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
         {/* Core sphere */}
         <motion.div
           animate={{ 
-            scale: status === 'listening' ? [0.9, 1, 0.9] : [0.95, 1, 0.95],
+            scale: status === 'listening' ? [0.9, 1, 0.9] : status === 'healing' ? [0.85, 1.05, 0.85] : [0.95, 1, 0.95],
           }}
           transition={{ 
             duration: getPulseSpeed() * 0.7,
@@ -183,6 +217,18 @@ const AIOrb = ({ status }: AIOrbProps) => {
               background: 'radial-gradient(ellipse, rgba(255,255,255,0.6) 0%, transparent 70%)'
             }}
           />
+
+          {/* Healing pulse effect */}
+          {status === 'healing' && (
+            <motion.div
+              animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0, 0.8] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%)'
+              }}
+            />
+          )}
         </motion.div>
 
         {/* Energy waves */}
@@ -201,7 +247,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
             }}
             className="absolute w-32 h-32 rounded-full"
             style={{
-              border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.5)' : 'rgba(0, 243, 255, 0.5)'}`
+              border: `1px solid ${status === 'error' ? 'rgba(255, 42, 109, 0.5)' : status === 'healing' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(0, 243, 255, 0.5)'}`
             }}
           />
         ))}
@@ -229,8 +275,10 @@ const AIOrb = ({ status }: AIOrbProps) => {
             bottom: '35%',
             background: status === 'processing' 
               ? 'rgba(168, 85, 247, 0.8)' 
+              : status === 'healing'
+              ? 'rgba(245, 158, 11, 0.8)'
               : 'rgba(0, 243, 255, 0.8)',
-            boxShadow: `0 0 10px ${status === 'processing' ? 'rgba(168, 85, 247, 0.8)' : 'rgba(0, 243, 255, 0.8)'}`
+            boxShadow: `0 0 10px ${status === 'processing' ? 'rgba(168, 85, 247, 0.8)' : status === 'healing' ? 'rgba(245, 158, 11, 0.8)' : 'rgba(0, 243, 255, 0.8)'}`
           }}
         />
       ))}
@@ -241,7 +289,7 @@ const AIOrb = ({ status }: AIOrbProps) => {
           key={`orbit-${i}`}
           animate={{ rotate: 360 }}
           transition={{ 
-            duration: 6 + i * 2,
+            duration: status === 'healing' ? 3 + i : 6 + i * 2,
             repeat: Infinity,
             ease: "linear"
           }}
@@ -259,8 +307,10 @@ const AIOrb = ({ status }: AIOrbProps) => {
               transform: 'translateY(-50%)',
               background: status === 'error' 
                 ? 'rgba(255, 42, 109, 0.8)' 
+                : status === 'healing'
+                ? 'rgba(245, 158, 11, 0.8)'
                 : 'rgba(0, 243, 255, 0.8)',
-              boxShadow: `0 0 8px ${status === 'error' ? 'rgba(255, 42, 109, 0.8)' : 'rgba(0, 243, 255, 0.8)'}`
+              boxShadow: `0 0 8px ${status === 'error' ? 'rgba(255, 42, 109, 0.8)' : status === 'healing' ? 'rgba(245, 158, 11, 0.8)' : 'rgba(0, 243, 255, 0.8)'}`
             }}
           />
         </motion.div>
@@ -273,24 +323,10 @@ const AIOrb = ({ status }: AIOrbProps) => {
         className="absolute -bottom-16 text-center"
       >
         <motion.span 
-          animate={{ opacity: status === 'error' ? [1, 0.5, 1] : 1 }}
-          transition={{ duration: 0.5, repeat: status === 'error' ? Infinity : 0 }}
-          className={`font-mono text-xs uppercase tracking-[0.3em] ${
-            status === 'error' 
-              ? 'text-signal-red' 
-              : status === 'processing'
-              ? 'text-purple-400'
-              : status === 'speaking'
-              ? 'text-matrix-green'
-              : 'text-neon-blue'
-          }`}
-          style={{
-            textShadow: status === 'error' 
-              ? '0 0 10px rgba(255, 42, 109, 0.8)' 
-              : status === 'processing'
-              ? '0 0 10px rgba(168, 85, 247, 0.8)'
-              : '0 0 10px rgba(0, 243, 255, 0.8)'
-          }}
+          animate={{ opacity: status === 'error' || status === 'healing' ? [1, 0.5, 1] : 1 }}
+          transition={{ duration: 0.5, repeat: status === 'error' || status === 'healing' ? Infinity : 0 }}
+          className={`font-mono text-xs uppercase tracking-[0.3em] ${getStatusColor()}`}
+          style={{ textShadow: getStatusGlow() }}
         >
           {status}
         </motion.span>
