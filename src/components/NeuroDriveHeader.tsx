@@ -1,17 +1,23 @@
 import { motion } from "framer-motion";
-import { Ghost, Terminal, Zap } from "lucide-react";
-import { useState } from "react";
+import { Ghost, Terminal, Wifi, WifiOff, Shield } from "lucide-react";
+import VoidButton from "./VoidButton";
 
 interface NeuroDriveHeaderProps {
   onWarRoomToggle: () => void;
   isGhostMode: boolean;
   onGhostModeToggle: () => void;
+  isGhostLoading?: boolean;
+  isVoided?: boolean;
+  onVoidSession?: () => Promise<boolean>;
 }
 
 const NeuroDriveHeader = ({ 
   onWarRoomToggle, 
   isGhostMode, 
-  onGhostModeToggle 
+  onGhostModeToggle,
+  isGhostLoading = false,
+  isVoided = false,
+  onVoidSession,
 }: NeuroDriveHeaderProps) => {
   return (
     <motion.header 
@@ -26,11 +32,15 @@ const NeuroDriveHeader = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onGhostModeToggle}
+          disabled={isGhostLoading}
           className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${
             isGhostMode 
-              ? 'bg-neon-blue/20 text-neon-blue text-glow-blue' 
+              ? 'bg-signal-red/20 text-signal-red' 
               : 'text-muted-foreground hover:text-foreground'
-          }`}
+          } ${isGhostLoading ? 'opacity-50 cursor-wait' : ''}`}
+          style={{
+            boxShadow: isGhostMode ? '0 0 15px rgba(255, 42, 109, 0.3)' : 'none',
+          }}
         >
           <Ghost className="w-5 h-5" />
           <span className="text-sm font-medium font-mono">GHOST</span>
@@ -38,24 +48,46 @@ const NeuroDriveHeader = ({
 
         {/* Center Status */}
         <div className="flex items-center gap-2">
-          <motion.div
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-2 h-2 rounded-full bg-matrix-green"
-          />
-          <span className="text-xs font-mono text-muted-foreground">ONLINE</span>
+          {isGhostMode ? (
+            <>
+              <motion.div
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <WifiOff className="w-4 h-4 text-signal-red" />
+              </motion.div>
+              <span className="text-xs font-mono text-signal-red">AIR-GAPPED</span>
+            </>
+          ) : (
+            <>
+              <motion.div
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-2 h-2 rounded-full bg-matrix-green"
+              />
+              <span className="text-xs font-mono text-muted-foreground">ONLINE</span>
+            </>
+          )}
         </div>
 
-        {/* War Room Toggle */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onWarRoomToggle}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:text-neon-blue hover:bg-neon-blue/10 transition-all duration-300"
-        >
-          <Terminal className="w-5 h-5" />
-          <span className="text-sm font-medium font-mono">WAR ROOM</span>
-        </motion.button>
+        {/* Right side controls */}
+        <div className="flex items-center gap-2">
+          {/* Void Button */}
+          {onVoidSession && (
+            <VoidButton onVoid={onVoidSession} isVoided={isVoided} />
+          )}
+
+          {/* War Room Toggle */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onWarRoomToggle}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-muted-foreground hover:text-neon-blue hover:bg-neon-blue/10 transition-all duration-300"
+          >
+            <Terminal className="w-5 h-5" />
+            <span className="text-sm font-medium font-mono hidden sm:inline">WAR ROOM</span>
+          </motion.button>
+        </div>
       </div>
     </motion.header>
   );
